@@ -5,20 +5,25 @@ $dotenv->load();
 
 class Telebot
 {
+    public $offset = 0;
+
     function getUpdates()
     {
-        $url = "https://api.telegram.org/bot" . $_ENV['BOT_TOKEN'] . "/getUpdates";
+        $url = "https://api.telegram.org/bot" . $_ENV['BOT_TOKEN'] . "/getUpdates?offset=" . $this->offset;
         $data = json_decode(file_get_contents($url), JSON_OBJECT_AS_ARRAY);
-        $i = 0;
-        foreach ($data["result"] as $message) {
-            $messages[$i]["update_id"] = $message["update_id"];
-            $messages[$i]["message_id"] = $message["message"]["message_id"];
-            $messages[$i]["chat_id"] = $message["message"]["chat"]["id"];
-            $messages[$i]["text"] = $message["message"]["text"];
-            $i++;
+        if ($data["result"]) {
+            $last = end($data["result"]);
+            $this->offset = $last["update_id"] + 1;
+            $i = 0;
+            foreach ($data["result"] as $message) {
+                $messages[$i]["update_id"] = $message["update_id"];
+                $messages[$i]["message_id"] = $message["message"]["message_id"];
+                $messages[$i]["chat_id"] = $message["message"]["chat"]["id"];
+                $messages[$i]["text"] = $message["message"]["text"];
+                $i++;
+            }
+            //print_r($messages);
         }
-        //print_r($messages);
-        return $messages;
     }
     function sendMessage()
     {
@@ -40,5 +45,4 @@ class Telebot
     }
 }
 $Omar = new Telebot;
-$messages = $Omar->getUpdates();
-$Omar->sendMessage();
+$Omar->getUpdates();
