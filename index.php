@@ -14,22 +14,24 @@ class Telebot
         if ($data["result"]) {
             $last = end($data["result"]);
             $this->offset = $last["update_id"] + 1;
-            $i = 0;
+            $messages = array();
             foreach ($data["result"] as $message) {
-                $messages[$i]["update_id"] = $message["update_id"];
-                $messages[$i]["message_id"] = $message["message"]["message_id"];
-                $messages[$i]["chat_id"] = $message["message"]["chat"]["id"];
-                $messages[$i]["text"] = $message["message"]["text"];
-                $i++;
+                $chat_id = $message["message"]["chat"]["id"];
+                $text = $message["message"]["text"];
+                if ($messages[$chat_id]) {
+                    $messages[$chat_id] .= "&$text";
+                } else {
+                    $messages[$chat_id] = $text;
+                }
             }
-            //print_r($messages);
+            return $messages;
         }
     }
-    function sendMessage()
+    function sendMessage($chat_id, $text)
     {
         $data = [
-            "chat_id" => 1140339250,
-            "text" => "Test"
+            "chat_id" => $chat_id,
+            "text" => $text
         ];
         $ch = curl_init("https://api.telegram.org/bot" . $_ENV['BOT_TOKEN'] . "/sendMessage");
         curl_setopt_array($ch, [
@@ -39,10 +41,16 @@ class Telebot
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_TIMEOUT => 10
         ]);
-        $result = json_decode(curl_exec($ch), true);
+        curl_exec($ch); //$result = json_decode(curl_exec($ch), true);
         curl_close($ch);
-        //print_r($result);
     }
 }
 $Omar = new Telebot;
-$Omar->getUpdates();
+do {
+    $messages = $Omar->getUpdates();
+    if($messages){
+        foreach($messages as $message){
+            //ответить на сообщение
+        }
+    }
+} while ($messages);
